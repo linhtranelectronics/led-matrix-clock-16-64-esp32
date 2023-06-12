@@ -1,0 +1,107 @@
+#include "Solar2luna.h"
+
+
+
+struct MONTH_INFO
+{
+	unsigned int N_AL_DT_DL : 5;
+	unsigned int T_AL_DT_DL : 4;
+	unsigned int SN_CT_AL : 1;
+	unsigned int TN_B_THT : 1;
+	unsigned int SN_CT_DL : 2;
+};
+
+union LUNAR_RECORD
+{
+	unsigned int Word;
+	struct MONTH_INFO Info;
+};
+
+// Lunar Calendar Lookup Table
+// From 1/1/2000 to 31/12/2099
+
+//const PROGMEM long int LUNAR_CALENDAR_LOOKUP_TABLE[] = {
+const long int LUNAR_CALENDAR_LOOKUP_TABLE[] = {
+  0x1B76, 0x0997, 0x1A37, 0x1058, 0x1A79, 0x109A, 0x18BB, 0x1ADD, 0x1101, 0x1B21, 0x1142, 0x1B63 ,
+  0x1B84, 0x0025, 0x1A44, 0x1065, 0x1A86, 0x10A7, 0x18C8, 0x1ACA, 0x10EB, 0x1B0C, 0x112D, 0x1B4E,
+  0x1B6F, 0x0390, 0x182E, 0x1250, 0x1870, 0x1292, 0x18B2, 0x18D4, 0x12F6, 0x1916, 0x1138, 0x1B59,
+  0x1B7A, 0x039B, 0x1839, 0x125B, 0x1A7B, 0x109C, 0x1ABD, 0x18E1, 0x1303, 0x1923, 0x1145, 0x1B66,
+  0x1B87, 0x0828, 0x1A48, 0x1269, 0x1A89, 0x108A, 0x1AAB, 0x18CC, 0x10EE, 0x1B0F, 0x1130, 0x1951 ,
+  0x1B73, 0x0394, 0x1832, 0x1254, 0x1A74, 0x1095, 0x1AB6, 0x18D7, 0x12F9, 0x1919, 0x133B, 0x195B,
+  0x1B7D, 0x0021, 0x1A3D, 0x1061, 0x1A81, 0x12A3, 0x1AC3, 0x18E4, 0x1306, 0x1926, 0x1348, 0x1968,
+  0x1B8A, 0x002B, 0x1A4A, 0x104B, 0x186C, 0x128E, 0x1AAE, 0x18CF, 0x12F1, 0x1B11, 0x1132, 0x1B53,
+  0x1974, 0x0B96, 0x1835, 0x1257, 0x1877, 0x1099, 0x1ABA, 0x18DB, 0x12FD, 0x1B1D, 0x1141, 0x1B61,
+  0x1982, 0x0224, 0x1842, 0x1264, 0x1884, 0x10A6, 0x1AC7, 0x18C8, 0x12EA, 0x190A, 0x132C, 0x1B4C,
+  0x1B6D, 0x018E, 0x1A2D, 0x104E, 0x1A6F, 0x1090, 0x18B1, 0x1AD3, 0x10F4, 0x1915, 0x1337, 0x1B57 ,
+  0x1B78, 0x0199, 0x1A38, 0x1259, 0x1879, 0x129B, 0x18BB, 0x18DD, 0x1301, 0x1922, 0x1344, 0x1B64,
+  0x1985, 0x0A27, 0x1A46, 0x1267, 0x1887, 0x12A9, 0x18A9, 0x18CB, 0x12ED, 0x190D, 0x112F, 0x1B50,
+  0x1B71, 0x0192, 0x1A31, 0x1252, 0x1872, 0x1294, 0x18B4, 0x1AD6, 0x10F7, 0x1B18, 0x1139, 0x195A,
+  0x1B7C, 0x019D, 0x1A3C, 0x125D, 0x187D, 0x12A1, 0x1AC1, 0x1AE3, 0x1104, 0x1B25, 0x1146, 0x1B67,
+};
+
+void converSolar2luna::Solar2Lunar(unsigned int SolarDate,unsigned int SolarMonth,unsigned int SolarYear) {
+	int N_AL_DT_DL;
+	int T_AL_DT_DL;
+	int SN_CT_AL;
+	int TN_B_THT;
+	int N_AL_DT_DL_TT;
+	int T_AL_DT_DL_TT;
+
+	union LUNAR_RECORD lr;
+
+	lr.Word = LUNAR_CALENDAR_LOOKUP_TABLE[(SolarYear - BEGINNING_YEAR) * 12 + SolarMonth - 1];
+	N_AL_DT_DL = lr.Info.N_AL_DT_DL;
+	T_AL_DT_DL = lr.Info.T_AL_DT_DL;
+	SN_CT_AL = lr.Info.SN_CT_AL + 29;
+	TN_B_THT = lr.Info.TN_B_THT;
+
+	lr.Word = LUNAR_CALENDAR_LOOKUP_TABLE[(SolarYear - BEGINNING_YEAR) * 12 + SolarMonth];
+	N_AL_DT_DL_TT = lr.Info.N_AL_DT_DL;
+	T_AL_DT_DL_TT = lr.Info.T_AL_DT_DL;
+
+	// Tinh ngay & thang
+	if (N_AL_DT_DL == SN_CT_AL && N_AL_DT_DL_TT == 2) {
+		if (SolarDate == 1) {
+			(lunar_dd) = N_AL_DT_DL;
+			(lunar_mm) = T_AL_DT_DL;
+		} else if (SolarDate == 31) {
+			(lunar_dd) = 1;
+			(lunar_mm) = T_AL_DT_DL_TT;
+		} else {
+			(lunar_dd) = SolarDate - 1;
+			if (TN_B_THT) {
+				(lunar_mm) = T_AL_DT_DL;
+			} else {
+				(lunar_mm) = T_AL_DT_DL == 12 ? 1 :
+					(T_AL_DT_DL + 1);
+			}
+		}
+	} else {
+		(lunar_dd) = SolarDate + N_AL_DT_DL - 1;
+		if ((lunar_dd) <= SN_CT_AL) {
+			(lunar_mm) = T_AL_DT_DL;
+		} else {
+			(lunar_dd) -= SN_CT_AL;
+
+			(lunar_mm) = T_AL_DT_DL + 1 - TN_B_THT;
+			if ((lunar_mm) == 13) (lunar_mm) = 1;
+		}
+	}
+
+	// Tinh Nam
+	if (SolarMonth >= (lunar_mm)) {
+		(lunar_yy) = SolarYear;
+	} else {
+		(lunar_yy) = SolarYear - 1;
+	}
+}
+
+unsigned int converSolar2luna::get_lunar_dd() {
+	return lunar_dd;
+}
+unsigned int converSolar2luna::get_lunar_mm() {
+	return lunar_mm;
+}
+unsigned int converSolar2luna::get_lunar_yy() {
+	return lunar_yy;
+}
